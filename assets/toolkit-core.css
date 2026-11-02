@@ -1,0 +1,130 @@
+.tk-data-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border:1px solid rgba(150,170,190,.28);border-radius:999px;background:rgba(120,145,165,.08);color:inherit;font-size:10.5px;line-height:1.3;white-space:normal}
+.tk-data-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}
+
+
+/* Shared toolkit UI primitives v2.3 */
+.tk-data-badge{font-variant-numeric:tabular-nums}
+.tk-meta-block{line-height:1.45}
+.tk-status{position:relative;line-height:1.45}
+.tk-status.tk-ok{color:#54d58b!important}.tk-status.tk-warning,.tk-status.tk-busy{color:#e7bd63!important}.tk-status.tk-error{color:#ff7474!important}
+.tk-progress-host{position:relative}.tk-progress-bar{transition:width .15s ease}
+.tk-progress-label{font-variant-numeric:tabular-nums}
+.tk-file-queue{scrollbar-width:thin;scrollbar-color:#42505e transparent}
+.tk-file-row{min-width:0}.tk-file-row [title],.tk-file-row .qname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tk-output-note{margin-top:6px;color:#93a0ad;font-size:10.5px;line-height:1.45}
+.tk-section-kicker{font-size:11px;color:#7f8b97;font-weight:500}
+.tk-help-target{cursor:help}
+.tk-fidelity-grid{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+.tk-export-summary{display:grid;gap:6px;padding:8px 10px;border:1px solid rgba(150,170,190,.2);border-radius:8px;background:rgba(120,145,165,.05);font-size:11px;line-height:1.4}
+.tk-export-summary b{color:inherit}
+
+/* Shared channel-selection UI v2.4 */
+.tk-channel-list{display:grid;gap:8px}
+.tk-channel-card{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border:1px solid rgba(150,170,190,.20);border-radius:9px;background:#0e1116;min-width:0}
+.tk-channel-card:hover{border-color:rgba(150,170,190,.34)}
+.tk-channel-check{display:flex;align-items:center;justify-content:center;align-self:stretch;min-width:18px}
+.tk-channel-check input{margin:0;accent-color:var(--accent,#68d391)}
+.tk-channel-swatch{width:13px;height:13px;border-radius:50%;border:1px solid rgba(255,255,255,.45);box-shadow:0 0 0 2px rgba(255,255,255,.03);flex:0 0 auto}
+.tk-channel-copy{min-width:0}
+.tk-channel-title{display:flex;align-items:center;gap:8px;min-width:0}
+.tk-channel-title strong,.tk-channel-title .tk-channel-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tk-channel-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:4px;color:var(--muted,#8d98a8);font-size:10px;line-height:1.35}
+.tk-channel-identity,.tk-channel-role{display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border:1px solid rgba(150,170,190,.23);border-radius:999px;background:rgba(120,145,165,.07);font-size:9.5px;line-height:1.25;white-space:nowrap}
+.tk-channel-identity::before,.tk-channel-role::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--tk-chip-color,#9aa7b4);box-shadow:0 0 0 1px rgba(255,255,255,.18)}
+.tk-channel-role[data-role="magenta"]{--tk-chip-color:#ff00ff;border-color:rgba(255,0,255,.34);color:#ff8cff}
+.tk-channel-role[data-role="green"]{--tk-chip-color:#00ff4c;border-color:rgba(0,255,76,.30);color:#7aff9e}
+.tk-channel-role[data-role="red"]{--tk-chip-color:#ff3b30;border-color:rgba(255,59,48,.32);color:#ff918a}
+.tk-channel-role[data-role="blue"]{--tk-chip-color:#4285ff;border-color:rgba(66,133,255,.34);color:#8db7ff}
+.tk-channel-role[data-role="cyan"]{--tk-chip-color:#00e5ff}.tk-channel-role[data-role="yellow"]{--tk-chip-color:#ffe500}
+.tk-channel-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;flex-wrap:wrap}
+.tk-channel-actions select{min-width:112px;max-width:180px}
+.tk-channel-toggle{display:inline-flex;align-items:center;gap:4px;color:var(--muted,#8d98a8);font-size:10px;white-space:nowrap;cursor:pointer}
+.tk-channel-toggle input{margin:0;accent-color:var(--accent,#68d391)}
+.tk-channel-role-map{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tk-channel-role-arrow{color:var(--muted,#8d98a8);font-size:10px}
+.tk-channel-identity-strip{display:flex;gap:6px;align-items:center;flex-wrap:wrap;min-width:0}
+@media(max-width:720px){.tk-channel-card{grid-template-columns:auto minmax(0,1fr)}.tk-channel-actions{grid-column:2;justify-content:flex-start}.tk-channel-actions select{max-width:100%;flex:1 1 130px}.tk-channel-meta{gap:4px}}
+
+/* Shared LUT + custom color controls v2.4.2 */
+.tk-color-lut-control{display:flex;align-items:center;gap:6px;min-width:0;width:100%}
+.tk-color-lut-control>input[type=color]{flex:0 0 auto}
+.tk-color-lut-select{min-width:0;flex:1 1 auto;max-width:170px}
+.tk-channel-actions .tk-color-lut-control{width:auto;flex:1 1 180px;justify-content:flex-end}
+.tk-channel-actions .tk-color-lut-select{max-width:150px}
+@media(max-width:720px){.tk-color-lut-control{flex-wrap:nowrap}.tk-color-lut-select{max-width:none}.tk-channel-actions .tk-color-lut-control{width:100%;flex:1 1 100%}}
+
+
+/* Compact image metadata popover v2.4.4 */
+.tk-image-info-host{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;flex:0 0 auto}
+.tk-image-info-btn{appearance:none;width:21px!important;height:21px!important;min-width:21px!important;padding:0!important;border:1px solid rgba(150,170,190,.38)!important;border-radius:50%!important;background:rgba(120,145,165,.08)!important;color:var(--muted,#9aa7b4)!important;font:600 11px/1 system-ui,-apple-system,Segoe UI,sans-serif!important;display:inline-grid!important;place-items:center!important;cursor:pointer!important;box-shadow:none!important}
+.tk-image-info-btn:hover,.tk-image-info-btn[aria-expanded="true"]{border-color:var(--accent,#68d391)!important;color:var(--text,#eef3f7)!important;background:rgba(104,211,145,.10)!important}
+.tk-image-info-btn[hidden]{display:none!important}
+/* A dot on the button when the image carries adjustments, so a glance over
+   the gallery still shows which ones have been changed. */
+.tk-image-info-btn.adjusted{position:relative;border-color:#6ba4ff!important;color:#bcd4ff!important}
+.tk-image-info-btn.adjusted::after{content:'';position:absolute;top:-1px;right:-1px;width:6px;height:6px;border-radius:50%;background:#6ba4ff;box-shadow:0 0 0 1.5px var(--panel-2,#12171d)}
+.tk-image-info-popover{position:fixed;z-index:100000;display:none;max-width:calc(100vw - 16px);padding:8px 10px;border:1px solid rgba(150,170,190,.32);border-radius:9px;background:#11171e;color:#e8eef5;box-shadow:0 12px 34px rgba(0,0,0,.48);font:11px/1.35 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;text-align:left}
+.tk-image-info-popover.open{display:block}
+.tk-image-info-popover.wide{max-height:min(calc(100vh - 16px),640px);overflow:auto;overscroll-behavior:contain}
+.tk-image-info-head{margin:8px 0 2px;padding-top:8px;border-top:1px solid rgba(150,170,190,.22);color:#9fb3c6;font-weight:500;font-size:11px;}
+.tk-image-info-row.acq{grid-template-columns:112px minmax(0,1fr)}
+.tk-image-info-head+.tk-image-info-row{border-top:0}
+.tk-image-info-all{margin-top:6px;border-top:1px solid rgba(150,170,190,.16);padding-top:6px;position:relative}
+.tk-image-info-all summary{cursor:pointer;color:#bcd0e2;font-weight:600}
+.tk-image-info-copy{position:absolute;top:4px;right:0;appearance:none;border:1px solid rgba(150,170,190,.35);border-radius:6px;background:rgba(120,145,165,.12);color:#dbe6f0;font:600 10.5px/1 system-ui,-apple-system,Segoe UI,sans-serif;padding:4px 8px;cursor:pointer}
+.tk-image-info-all:not([open]) .tk-image-info-copy{display:none}
+.tk-image-info-all pre{margin:6px 0 0;max-height:300px;overflow:auto;white-space:pre-wrap;word-break:break-word;font:10.5px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;color:#d6e0ea;background:rgba(0,0,0,.25);border-radius:6px;padding:6px 8px}
+.tk-image-info-row{display:grid;grid-template-columns:72px minmax(0,1fr);gap:10px;align-items:start;padding:4px 0;border-top:1px solid rgba(150,170,190,.10)}
+.tk-image-info-row:first-child{border-top:0}.tk-image-info-row span{color:#8592a0}.tk-image-info-row b{font-weight:600;color:#edf2f7;word-break:break-word;font-variant-numeric:tabular-nums}
+.tk-image-info-inline{display:flex;align-items:center;gap:6px;min-width:0}.tk-image-info-inline>.file-name{flex:1 1 auto;min-width:0}
+
+/* A merge's channel names, each printed in the false colour it was rendered in.
+   Used wherever a composite is named, because "TH + tdTomato" alone never says
+   which one you are looking at. */
+.tk-merge-legend{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
+.tk-merge-part{display:inline-flex;align-items:center;gap:4px;min-width:0;color:var(--tk-part-ink,var(--tk-part-color,#e7edf4));font-weight:600;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.tk-merge-dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;background:var(--tk-part-color,#9aa7b4);box-shadow:0 0 0 1px rgba(255,255,255,.28)}
+.tk-merge-join{color:#6b7684;font-weight:400}
+button.tk-merge-swap{display:inline-flex;align-items:center;gap:4px;height:21px;padding:0 8px;border:1px solid rgba(150,170,190,.26);border-radius:999px;background:rgba(120,145,165,.08);color:#9aa7b4;font-size:10px;cursor:pointer}
+button.tk-merge-swap:hover:not(:disabled){color:#e7edf4;border-color:rgba(150,170,190,.5);background:rgba(120,145,165,.18)}
+
+/* Reassigning a merge's false colours: one button per channel, and for a triple
+   a small menu of the other two roles. Shared by the slide deck and Image Prep. */
+/* One line, always the same height, present even when there is nothing to put
+   in it: a merge card must not stand taller than the single beside it. */
+.merge-role-row{display:flex;align-items:center;gap:4px;flex-wrap:nowrap;min-width:0;height:22px;overflow:hidden}
+.merge-role-row>.tk-merge-swap{min-width:0;flex:0 1 auto;overflow:hidden}
+.merge-role-row .tk-merge-legend{flex-wrap:nowrap;min-width:0}
+.merge-role-row .tk-merge-part{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block}
+.merge-role-row .tk-merge-dot{display:inline-block;vertical-align:-1px;margin-right:4px}
+.merge-role-menu{position:fixed;z-index:100010;display:flex;flex-direction:column;gap:4px;padding:6px;border:1px solid rgba(150,170,190,.3);border-radius:8px;background:#11161c;box-shadow:0 10px 28px rgba(0,0,0,.55)}
+.merge-role-menu button{display:flex;align-items:center;justify-content:flex-start;padding:4px 6px;border:0;border-radius:5px;background:none;cursor:pointer}
+.merge-role-menu button:hover{background:rgba(120,145,165,.16)}
+.merge-role-menu button.current{background:rgba(120,145,165,.22);box-shadow:inset 0 0 0 1px rgba(150,170,190,.32)}
+.merge-role-sep{height:1px;margin:4px 2px;background:rgba(150,170,190,.22)}
+.merge-role-label{min-width:104px;margin-right:8px;color:#9fb0c2;font-size:11px;text-align:left}
+.merge-role-note{padding:4px 6px 1px;color:#8292a3;font-size:11px}
+.chan-panel{width:244px;gap:6px;padding:8px}
+.chan-panel-head{padding:0 1px 2px;font-size:11px;font-weight:650}
+.chan-swatches{display:flex;flex-wrap:wrap;gap:4px;padding:1px 0 2px}
+button.chan-swatch{width:17px;height:17px;padding:0;border:1px solid rgba(150,170,190,.35);border-radius:50%;cursor:pointer}
+button.chan-swatch:hover{border-color:#e7edf4}
+button.chan-swatch.current{box-shadow:0 0 0 2px #11161c,0 0 0 3px #6ba4ff}
+.chan-name{display:grid;grid-template-columns:34px minmax(0,1fr);align-items:center;gap:6px;font-size:10px;color:#9aa7b4}
+.chan-name input{min-width:0;height:22px;padding:0 6px;border:1px solid rgba(150,170,190,.3);border-radius:5px;background:rgba(10,14,19,.6);color:#e7edf4;font:600 11px/1 inherit}
+.chan-name input:focus{outline:none;border-color:#6ba4ff}
+label.chan-swatch-custom{position:relative;display:inline-block;width:17px;height:17px;border:1px solid rgba(150,170,190,.35);border-radius:50%;cursor:pointer;overflow:hidden;background:conic-gradient(#f55,#fd5,#5f8,#5df,#86f,#f5c,#f55)}
+label.chan-swatch-custom:hover{border-color:#e7edf4}
+label.chan-swatch-custom.current{box-shadow:0 0 0 2px #11161c,0 0 0 3px #6ba4ff}
+label.chan-swatch-custom input{position:absolute;inset:-4px;width:calc(100% + 8px);height:calc(100% + 8px);opacity:0;cursor:pointer;border:0;padding:0}
+.chan-actions button[aria-pressed="true"]{background:rgba(107,164,255,.22);border-color:#6ba4ff;color:#e7edf4}
+.chan-hist{width:100%;height:76px;border:1px solid rgba(150,170,190,.22);border-radius:5px;background:#050607;cursor:ew-resize;touch-action:none}
+.chan-slider{display:grid;grid-template-columns:48px minmax(0,1fr) 30px;align-items:center;gap:6px;font-size:10px;color:#9aa7b4}
+.chan-slider input[type=range]{width:100%;min-width:0;margin:0;accent-color:#6ba4ff}
+.chan-num{text-align:right;font-variant-numeric:tabular-nums;color:#c7d2de}
+.chan-actions{display:flex;flex-wrap:wrap;gap:4px;padding-top:2px}
+.chan-actions button{padding:4px 8px;border:1px solid rgba(150,170,190,.3);border-radius:5px;background:rgba(120,145,165,.1);color:#c7d2de;font-size:10px;cursor:pointer}
+.chan-actions button:hover:not(:disabled){background:rgba(120,145,165,.2);color:#e7edf4}
+.chan-actions button:disabled{opacity:.42;cursor:default}
+.chan-status{min-height:12px;font-size:9.5px;color:#9aa7b4}
+.chan-status:empty{display:none}

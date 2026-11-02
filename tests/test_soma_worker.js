@@ -1,0 +1,8 @@
+'use strict';
+const fs=require('fs'),vm=require('vm'),crypto=require('crypto'),assert=require('assert');
+const path='assets/soma-detector-worker.js',w=96,h=80,n=w*h,a=new Float32Array(n);
+for(let y=0;y<h;y++)for(let x=0;x<w;x++){let v=15+0.02*x+0.03*y;for(const [cx,cy,r,amp] of [[25,25,7,95],[58,24,9,130],[42,56,6,110],[75,58,8,85]]){const d2=(x-cx)**2+(y-cy)**2;v+=amp*Math.exp(-d2/(2*(r/2.3)**2));}a[y*w+x]=v;}
+const messages=[],self={postMessage:m=>messages.push(m)},ctx={self,console,Float32Array,Float64Array,Uint8Array,Uint8ClampedArray,Uint16Array,Uint32Array,Int32Array,Array,Math,Number,Object,String,Boolean,Map,Set,JSON,Date,Infinity,NaN};vm.createContext(ctx);vm.runInContext(fs.readFileSync(path,'utf8'),ctx,{filename:path});
+const params={dMin:10,dMax:28,snr:2.0,minWidth:5,minContrast:0,fillHoles:false,satRescue:true,colocMode:'all',colocThr:.4,minFill:.35,bleed:.2,thin:2,sep:7,maxAspect:4,edgeMargin:4,areaLo:0,areaHi:999999,colocIdx:[],detectKey:'c0',detectionMode:'normal'};
+ctx.self.onmessage({data:{type:'run',requestId:'snapshot-1',id:'synthetic',w,h,channels:[a],params}});const result=[...messages].reverse().find(m=>m.type==='result');assert.ok(result);assert.equal(result.requestId,'snapshot-1');assert.equal(result.cells.length,4);
+const stable={cells:result.cells.map(c=>({x:+c.x.toFixed(4),y:+c.y.toFixed(4),area:+c.area.toFixed(4),contrast:+c.contrast.toFixed(6),donutRescue:!!c.donutRescue})),rej:result.rej,seeds:result.seeds};const hash=crypto.createHash('sha256').update(JSON.stringify(stable)).digest('hex');assert.equal(hash,'7b642ed36c3c46ee249dbce822f17d67257d52a032b7ff98c475bd80ca50403a');console.log('test_soma_worker: ok');

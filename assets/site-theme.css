@@ -1,0 +1,51 @@
+/* The homepage's night sky, for every tool page: its navy gradient with a
+   scatter of faint stars, its colours and type, its glassy cards, and the
+   tool's own homepage icon beside a larger title. Each page maps its own
+   colour variables onto these (in a style block of its own, after its other
+   styles), puts .site-sky on its body, and sets --tint to the colour of its
+   tool on the homepage, which is its one accent: panel titles and the main
+   buttons. */
+:root{
+  --site-bg:#070a11;
+  --site-text:#eef1f6;
+  --site-muted:#8f99a8;
+  --site-faint:#5d6675;
+  /* Panels are night-blue glass, nearly opaque: the stars show around them,
+     not through the controls, where they would read as specks. */
+  --site-panel:rgba(12,17,27,.94);
+  --site-bar:rgba(7,10,17,.92);
+  --site-glass:rgba(255,255,255,.025);
+  --site-glass-2:rgba(255,255,255,.045);
+  --site-glass-hover:rgba(255,255,255,.07);
+  --site-glass-line:rgba(255,255,255,.075);
+  --site-glass-line-2:rgba(255,255,255,.12);
+  --site-glass-line-hover:rgba(255,255,255,.2);
+  --site-well:#03050a;
+  --site-menu:#0d1220;
+  --site-font:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+/* One soft glow above, stars, and the homepage's navy falling to black. Fixed,
+   so panels scroll over a still sky. */
+.site-sky{
+  background-color:var(--site-bg)!important;
+  background-image:radial-gradient(ellipse 70% 42% at 50% 0%,rgba(70,92,150,.17),transparent 70%),url("icons/stars.svg"),linear-gradient(#080c15,#06080e 70%)!important;
+  background-size:100% 100%,720px 720px,100% 100%!important;
+  background-repeat:no-repeat,repeat,no-repeat!important;
+  background-attachment:fixed!important;
+}
+/* Text in the tool's colour (panel titles): the colour itself on the night
+   sky, a darker shade of it in the light theme, which cannot read colours set
+   through variables and would leave the pale one on white. The light theme
+   turns every colour written out in a stylesheet, so the ink is mixed in from
+   numbers. Set on body as well,
+   for a page whose body picks its own tint (the workshop's tabs). */
+:root,body{--site-tint-text:rgb(var(--tint,140,160,200))}
+:root{--site-ink:16,19,26}   /* numbers, not a colour, so the light theme leaves it dark */
+:root[data-theme=light],:root[data-theme=light] body{--site-tint-text:color-mix(in srgb,rgb(var(--tint,140,160,200)) 52%,rgb(var(--site-ink)))}
+.site-tool-icon{width:34px;height:34px;flex:none;display:block;object-fit:contain}
+.toolkit-back{color:var(--site-muted)!important;font:500 13px/1.2 var(--site-font)!important;text-decoration:none!important;opacity:1!important}
+.toolkit-back:hover,.toolkit-back:focus-visible{color:var(--site-text)!important}
+/* A dropdown's open list is drawn by the system, which leaves an option with no
+   background of its own on a white menu, under the pale text it inherits. Each
+   option gets the dark menu colour (written out, so the light theme turns it). */
+option,optgroup{background-color:#0d1220;color:#eef1f6}

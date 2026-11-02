@@ -1,0 +1,97 @@
+{
+ "id": "somaNet-v1",
+ "sha256": "e44f061bfdffaf6d7d10d0710fe2c72a2434f6c7f59cf9d129438c0394d8b7ea",
+ "thresholds": {
+  "normal": 0.2025,
+  "donut": 0.185
+ },
+ "architecture": {
+  "normal": {
+   "channels": [
+    12,
+    24,
+    48,
+    64
+   ],
+   "inputs": 4,
+   "local_contrast": true
+  },
+  "donut": {
+   "channels": [
+    8,
+    16,
+    32,
+    48
+   ],
+   "inputs": 3,
+   "local_contrast": false
+  }
+ },
+ "data": {
+  "images": {
+   "normal": 19,
+   "donut": 13
+  },
+  "animals": [
+   "1",
+   "2",
+   "3",
+   "4",
+   "5"
+  ],
+  "hand_dots": {
+   "normal": 7952,
+   "donut": 5297
+  },
+  "source": "hand-corrected Soma ImageJ TIFF exports, one tissue preparation"
+ },
+ "leave_one_animal_out": {
+  "normal": {
+   "mean_abs_count_error": 0.074,
+   "within_10pct": "14/19",
+   "bias": -0.032,
+   "F1": 0.861,
+   "precision": 0.87,
+   "recall": 0.85,
+   "match_radius_px": 10
+  },
+  "donut": {
+   "mean_abs_count_error": 0.125,
+   "within_10pct": "6/13",
+   "bias": 0.032,
+   "F1": 0.793,
+   "precision": 0.78,
+   "recall": 0.8,
+   "match_radius_px": 15
+  }
+ },
+ "current_tool_same_images": {
+  "normal": {
+   "mean_abs_count_error": 0.094,
+   "within_10pct": "13/19",
+   "F1": 0.864,
+   "model": "somaHandRF-v1 at 0.27"
+  },
+  "donut": {
+   "mean_abs_count_error": 0.14,
+   "within_10pct": "5/13",
+   "F1": 0.813,
+   "model": "Donut rules + automatic floor"
+  }
+ },
+ "user_decisions": {
+  "note": "held out by animal; current tool = the dots the user was correcting",
+  "normal": {
+   "hand_added_found": "1158/1840",
+   "hand_added_found_current": "796/1840",
+   "deleted_still_marked": "1/11",
+   "deleted_still_marked_current": "11/11"
+  },
+  "donut": {
+   "hand_added_found": "1168/1564",
+   "hand_added_found_current": "535/1564",
+   "deleted_still_marked": "118/410",
+   "deleted_still_marked_current": "410/410"
+  }
+ }
+}

@@ -1,0 +1,329 @@
+{
+ "id": "somaHandRF-v1",
+ "features": [
+  "areaN",
+  "widthN",
+  "minorN",
+  "majorN",
+  "aspect",
+  "zMeanN",
+  "zPeakN",
+  "contrastSigma",
+  "contrastBg",
+  "contrastOtsu",
+  "contrastRank",
+  "zRank",
+  "areaRank",
+  "nnDistN",
+  "nnBrighter",
+  "neighbours16"
+ ],
+ "threshold": 0.52,
+ "neighbourRadiusPx": 16.0,
+ "validatedDomain": {
+  "pixelSizeUm": 1.25,
+  "dMinPx": 10,
+  "detectionMode": "normal",
+  "singleChannelOnly": true,
+  "minImageQuality": 5.348,
+  "maxImageQuality": 12.89,
+  "imageQualityDefinition": "median contrast of the brightest quarter of candidates divided by the median local background of all candidates"
+ },
+ "training": {
+  "images": [
+   "A1-S2 C=1",
+   "A1-S2 C=2",
+   "A1-S3 C=1",
+   "A1-S3 C=2",
+   "A1-S4 C=1",
+   "A1-S4 C=2",
+   "A1-S5 C=1",
+   "A1-S5 C=2",
+   "A1-S6 C=1",
+   "A1-S6 C=2",
+   "A2-S1 C=1",
+   "A2-S1 C=2",
+   "A2-S2 C=1",
+   "A2-S2 C=2",
+   "A2-S3 C=1",
+   "A2-S3 C=2",
+   "A2-S5 C=1",
+   "A2-S5 C=2",
+   "A2-S6 C=1",
+   "A2-S6 C=2",
+   "A3-S1 C=1",
+   "A3-S1 C=2",
+   "A3-S2 C=2",
+   "A3-S3 C=2",
+   "A3-S4 C=1",
+   "A3-S4 C=2"
+  ],
+  "handPoints": 7045,
+  "candidates": 15898,
+  "positives": 6674,
+  "labelRule": "candidate matched to a Fiji multi-point hand count within 8 px (optimal one-to-one assignment)",
+  "excluded": "C=0 (all sections): low image quality; Axon-heavy views; A3-S5 (no points)",
+  "sklearn": "1.9.1",
+  "params": {
+   "n_estimators": 60,
+   "min_samples_leaf": 40,
+   "max_depth": 12,
+   "max_features": "sqrt",
+   "bootstrap": true,
+   "random_state": 0
+  },
+  "thresholdRule": "minimise mean |count error| of out-of-bag predictions over training images"
+ },
+ "validation": {
+  "scheme": "leave-one-animal-out (A1, A2, A3); model and threshold refit without the held-out animal",
+  "heldOut": {
+   "images": 26,
+   "within5": 8,
+   "within10": 14,
+   "meanAbsErr": 0.10247498284782322,
+   "medianAbsErr": 0.09778554254769345,
+   "worstAbsErr": 0.3529411764705883,
+   "bias": -0.011003413491523404,
+   "f1": 0.8454127121081392,
+   "handTotal": 7045,
+   "toolTotal": 6863
+  },
+  "perImage": [
+   {
+    "sec": "A1-S2",
+    "ch": "c1",
+    "animal": "A1",
+    "hand": 241,
+    "tool": 301,
+    "threshold": 0.51,
+    "quality": 7.253
+   },
+   {
+    "sec": "A1-S2",
+    "ch": "c2",
+    "animal": "A1",
+    "hand": 261,
+    "tool": 266,
+    "threshold": 0.51,
+    "quality": 10.425
+   },
+   {
+    "sec": "A1-S3",
+    "ch": "c1",
+    "animal": "A1",
+    "hand": 401,
+    "tool": 355,
+    "threshold": 0.51,
+    "quality": 5.855
+   },
+   {
+    "sec": "A1-S3",
+    "ch": "c2",
+    "animal": "A1",
+    "hand": 263,
+    "tool": 233,
+    "threshold": 0.51,
+    "quality": 8.973
+   },
+   {
+    "sec": "A1-S4",
+    "ch": "c1",
+    "animal": "A1",
+    "hand": 350,
+    "tool": 388,
+    "threshold": 0.51,
+    "quality": 5.795
+   },
+   {
+    "sec": "A1-S4",
+    "ch": "c2",
+    "animal": "A1",
+    "hand": 299,
+    "tool": 273,
+    "threshold": 0.51,
+    "quality": 9.14
+   },
+   {
+    "sec": "A1-S5",
+    "ch": "c1",
+    "animal": "A1",
+    "hand": 398,
+    "tool": 376,
+    "threshold": 0.51,
+    "quality": 7.577
+   },
+   {
+    "sec": "A1-S5",
+    "ch": "c2",
+    "animal": "A1",
+    "hand": 197,
+    "tool": 202,
+    "threshold": 0.51,
+    "quality": 8.87
+   },
+   {
+    "sec": "A1-S6",
+    "ch": "c1",
+    "animal": "A1",
+    "hand": 282,
+    "tool": 222,
+    "threshold": 0.51,
+    "quality": 11.257
+   },
+   {
+    "sec": "A1-S6",
+    "ch": "c2",
+    "animal": "A1",
+    "hand": 191,
+    "tool": 164,
+    "threshold": 0.51,
+    "quality": 12.302
+   },
+   {
+    "sec": "A2-S1",
+    "ch": "c1",
+    "animal": "A2",
+    "hand": 483,
+    "tool": 424,
+    "threshold": 0.47,
+    "quality": 5.348
+   },
+   {
+    "sec": "A2-S1",
+    "ch": "c2",
+    "animal": "A2",
+    "hand": 304,
+    "tool": 254,
+    "threshold": 0.47,
+    "quality": 8.552
+   },
+   {
+    "sec": "A2-S2",
+    "ch": "c1",
+    "animal": "A2",
+    "hand": 189,
+    "tool": 190,
+    "threshold": 0.47,
+    "quality": 12.081
+   },
+   {
+    "sec": "A2-S2",
+    "ch": "c2",
+    "animal": "A2",
+    "hand": 138,
+    "tool": 141,
+    "threshold": 0.47,
+    "quality": 12.375
+   },
+   {
+    "sec": "A2-S3",
+    "ch": "c1",
+    "animal": "A2",
+    "hand": 382,
+    "tool": 419,
+    "threshold": 0.47,
+    "quality": 5.55
+   },
+   {
+    "sec": "A2-S3",
+    "ch": "c2",
+    "animal": "A2",
+    "hand": 273,
+    "tool": 230,
+    "threshold": 0.47,
+    "quality": 8.199
+   },
+   {
+    "sec": "A2-S5",
+    "ch": "c1",
+    "animal": "A2",
+    "hand": 233,
+    "tool": 256,
+    "threshold": 0.47,
+    "quality": 12.89
+   },
+   {
+    "sec": "A2-S5",
+    "ch": "c2",
+    "animal": "A2",
+    "hand": 148,
+    "tool": 154,
+    "threshold": 0.47,
+    "quality": 12.254
+   },
+   {
+    "sec": "A2-S6",
+    "ch": "c1",
+    "animal": "A2",
+    "hand": 315,
+    "tool": 276,
+    "threshold": 0.47,
+    "quality": 10.221
+   },
+   {
+    "sec": "A2-S6",
+    "ch": "c2",
+    "animal": "A2",
+    "hand": 185,
+    "tool": 186,
+    "threshold": 0.47,
+    "quality": 10.566
+   },
+   {
+    "sec": "A3-S1",
+    "ch": "c1",
+    "animal": "A3",
+    "hand": 221,
+    "tool": 299,
+    "threshold": 0.47,
+    "quality": 5.772
+   },
+   {
+    "sec": "A3-S1",
+    "ch": "c2",
+    "animal": "A3",
+    "hand": 144,
+    "tool": 151,
+    "threshold": 0.47,
+    "quality": 9.353
+   },
+   {
+    "sec": "A3-S2",
+    "ch": "c2",
+    "animal": "A3",
+    "hand": 259,
+    "tool": 240,
+    "threshold": 0.47,
+    "quality": 6.91
+   },
+   {
+    "sec": "A3-S3",
+    "ch": "c2",
+    "animal": "A3",
+    "hand": 171,
+    "tool": 191,
+    "threshold": 0.47,
+    "quality": 9.3
+   },
+   {
+    "sec": "A3-S4",
+    "ch": "c1",
+    "animal": "A3",
+    "hand": 433,
+    "tool": 392,
+    "threshold": 0.47,
+    "quality": 6.954
+   },
+   {
+    "sec": "A3-S4",
+    "ch": "c2",
+    "animal": "A3",
+    "hand": 284,
+    "tool": 280,
+    "threshold": 0.47,
+    "quality": 8.494
+   }
+  ]
+ },
+ "sha256": "90241fcc6abba35a2f28e69ed097e3e70d5e29876fcc3f2898ff430ef145a41c"
+}

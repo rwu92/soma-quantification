@@ -1,0 +1,852 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Soma Quantification v1.0.0: counts neuronal somata in fluorescence microscopy images (ND2, TIFF, PNG, JPEG) in the browser, with hand correction, regions and colocalisation.">
+<link rel="icon" type="image/png" href="favicon.png">
+<title>Soma Quantification — SN / VTA</title>
+<style>
+:root{
+  color-scheme:dark;
+    
+  
+ --key2:#6fa8f5; --warn:#e8b563; --bad:#f2778a; --flag:#c78bf0;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);
+  font:13px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,select,textarea{font:inherit;color:var(--text)}
+button,select,input[type=number],input[type=text]{background:#151d27;border:1px solid var(--line2);
+  border-radius:8px;padding:8px 10px}
+button{cursor:pointer;transition:border-color .12s,background .12s}
+button:hover:not(:disabled){border-color:#4c6379;background:#1a2431}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.primary{background:#12352d;border-color:#2b7f68;color:#a8f0da}
+button.primary:hover:not(:disabled){background:#17453a}
+button.on{border-color:var(--key);background:#12352d;color:#a8f0da}
+#tDel.cut{border-color:#f2778a;background:#3a1620;color:#ffc2cc}
+input[type=range]{width:100%;accent-color:var(--key);margin:2px 0}
+input:focus-visible,button:focus-visible,select:focus-visible{outline:2px solid var(--key2);outline-offset:1px}
+
+.app{display:grid;grid-template-rows:auto 1fr;height:100vh;min-height:640px}
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:12px 16px;border-bottom:1px solid var(--line);background:#0c1015}
+h1{margin:0;font-size:15px;font-weight:650;letter-spacing:-.01em}
+header .sub{color:var(--dimmer);font-size:11px;margin-top:1px}
+.pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);
+  border-radius:999px;padding:6px 12px;font-size:11px;color:var(--dim);font-family:var(--mono)}
+.dot{width:6px;height:6px;border-radius:50%;background:#4d5866;flex:none}
+.dot.ok{background:var(--key)} .dot.busy{background:var(--warn);animation:pulse 1s infinite}
+.dot.err{background:var(--bad)}
+@keyframes pulse{50%{opacity:.35}}
+
+.layout{display:grid;grid-template-columns:344px minmax(0,1fr) 268px;min-height:0}
+aside{overflow:auto;padding:12px;border-right:1px solid var(--line);background:#0b0f14}
+aside.right{border-right:0;border-left:1px solid var(--line)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:11px;
+  padding:12px;margin-bottom:10px}
+.card > h2{margin:0 0 10px;font-size:11px;font-weight:500;color:var(--dim);display:flex;justify-content:space-between;align-items:center}
+.card > h2 .n{font-family:var(--mono);color:var(--dimmer);letter-spacing:0}
+.files-head{display:flex;align-items:center;gap:8px}
+.add-images{font-size:10px;padding:2px 8px;letter-spacing:0;text-transform:none;font-weight:500}
+
+.drop{border:1px dashed var(--line2);border-radius:10px;padding:16px 10px;text-align:center;
+  background:#0d131a;cursor:pointer}
+.drop.over{border-color:var(--key);background:#10231e}
+.drop b{font-weight:600;font-size:12px} .drop input{display:none}
+.hint{color:var(--dimmer);font-size:11px;margin-top:4px}
+.histwrap{position:relative;height:52px;margin-top:6px;
+  border:1px solid var(--line);border-radius:8px;background:#0b1016;overflow:hidden}
+.histwrap canvas{position:absolute;left:0;top:0;width:100%;height:52px;display:block;
+  pointer-events:none}
+.histwrap input[type=range]{position:absolute;left:0;top:0;width:100%;height:52px;margin:0;
+  padding:0;background:transparent;-webkit-appearance:none;appearance:none;cursor:ew-resize}
+.histwrap input[type=range]:focus{outline:none}
+.histwrap.off canvas{opacity:.3}
+.histwrap.off input[type=range]{cursor:not-allowed}
+.histwrap.off input[type=range]::-webkit-slider-thumb{background:#5d6773}
+.note .linkish{padding:0;border:0;background:none;color:var(--key);text-decoration:underline;font:inherit;cursor:pointer}
+.histwrap input[type=range]::-webkit-slider-runnable-track{height:52px;background:transparent;border:0}
+.histwrap input[type=range]::-moz-range-track{height:52px;background:transparent;border:0}
+.histwrap input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:3px;height:52px;
+  border-radius:0;background:#fff;border:0;box-shadow:0 0 0 1px rgba(0,0,0,.85),0 0 6px rgba(0,0,0,.6)}
+.histwrap input[type=range]::-moz-range-thumb{width:3px;height:52px;border-radius:0;
+  background:#fff;border:0;box-shadow:0 0 0 1px rgba(0,0,0,.85)}
+.rowchk{display:flex;align-items:center;gap:8px;color:#c3cedb;font-size:12px;cursor:pointer}
+.rowchk input{width:14px;height:14px;accent-color:var(--key);cursor:pointer}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);
+  border-radius:999px;padding:4px 10px;font-size:11px;cursor:pointer;color:var(--dim);
+  background:#0d131a;user-select:none}
+.chip.on{border-color:var(--key);color:#a8f0da;background:#12352d}
+.chip i{width:8px;height:8px;border-radius:2px;display:inline-block}
+
+.list{margin-top:10px;border:1px solid var(--line);border-radius:8px;overflow:hidden;max-height:190px;overflow-y:auto}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;
+  padding:8px 10px;border-top:1px solid var(--line);font-size:11px;cursor:pointer}
+.row:first-child{border-top:0}
+.row:hover{background:#141c26}
+.row.cur{background:#16232e;box-shadow:inset 2px 0 0 var(--key)}
+.row .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--mono)}
+.row .st{color:var(--dimmer);font-family:var(--mono);font-size:10px}
+.row .st.done{color:var(--key)}
+/* The × that removes an image: on its row while the pointer or focus is there,
+   always on a touch screen. */
+#fileList .row{grid-template-columns:minmax(0,1fr) auto auto}
+.row-x{width:18px;height:18px;padding:0;border-radius:4px;display:grid;place-items:center;font-size:13px;line-height:1;opacity:0;background:transparent;border-color:transparent;color:var(--dim)}
+.row:hover .row-x,.row:focus-within .row-x,.row-x:focus-visible{opacity:1}
+.row-x:hover{color:var(--text);border-color:var(--line2)}
+@media (hover:none){.row-x{opacity:.8}}
+.pts-card.remove-card{width:min(440px,94vw);background:var(--site-bg)}
+.remove-text{font-size:12.5px;line-height:1.5;color:var(--dim);margin:6px 0 12px}
+button.danger{border-color:#8a3a45;color:#ffc2ca}
+button.danger:hover:not(:disabled){background:rgba(242,119,138,.14)} .row .st.err{color:var(--bad)}
+
+.f{margin-top:12px} .f:first-child{margin-top:0}
+.f label{display:block;color:#c3cedb;font-size:12px;margin-bottom:4px}
+.f .lr{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:2px}
+.v{font-family:var(--mono);font-size:11px;color:var(--key)}
+.v.alt{color:var(--dimmer)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+select,input[type=number],input[type=text]{width:100%}
+.note{color:var(--dimmer);font-size:10.5px;line-height:1.45;margin-top:6px}
+.help-tip{position:relative;display:inline-grid;place-items:center;width:14px;height:14px;
+  border-radius:50%;border:0;background:#18212b;color:#758292;font-size:9px;font-weight:600;
+  line-height:1;cursor:help;margin-left:6px;flex:none;user-select:none;vertical-align:middle;
+  box-shadow:inset 0 0 0 1px #2d3947;transition:background .12s,color .12s,box-shadow .12s}
+.help-tip:hover,.help-tip:focus-visible{background:#202b37;color:#d3dde7;
+  box-shadow:inset 0 0 0 1px #4a5d70;outline:none}
+.help-tip::after{content:"i";transform:translateY(-.2px)}
+#helpBubble{position:fixed;z-index:300;width:max-content;max-width:min(250px,calc(100vw - 16px));
+  padding:8px 10px;border-radius:7px;background:#111820;border:1px solid #2d3947;color:#d5dee8;
+  font-size:10.5px;line-height:1.42;font-weight:400;text-align:left;letter-spacing:0;text-transform:none;
+  white-space:normal;pointer-events:none;box-shadow:0 8px 22px rgba(0,0,0,.38);
+  opacity:0;visibility:hidden;transform:translateY(2px);transition:opacity .09s,transform .09s}
+#helpBubble.open{opacity:1;visibility:visible;transform:none}
+#helpBubble.measuring{opacity:0!important;visibility:hidden!important}
+.f .lr label{display:flex;align-items:center}
+.acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.acts button{flex:1;min-width:82px}/* Region editing as a row of icon buttons; each names itself on hover. */
+.rgn-tools{gap:4px}
+.rgn-tools .icon-tool{flex:0 0 auto;min-width:0;width:32px;height:28px;padding:0;display:grid;place-items:center}
+/* The ones that delete regions are red. */
+.rgn-tools .icon-tool.danger,.rgn>button,#clearCells{color:#f2778a;border-color:#6e3039}
+.rgn-tools .icon-tool.danger:hover:not(:disabled),.rgn>button:hover:not(:disabled),#clearCells:hover:not(:disabled){color:#ff9aa8;border-color:#8a3a45}
+#clearCells{margin-left:4px}
+
+.export-actions{display:grid;gap:8px;margin-top:12px}
+.export-row{display:flex;gap:8px;min-width:0}
+.export-row button{min-width:0}
+.export-row-tiff button{flex:1 1 0;width:33%;padding-left:4px;padding-right:4px}
+.export-tiff-label{font-size:11px;color:var(--dim);margin-bottom:-4px}
+.export-only{font-size:11px;margin-top:2px}
+
+main{display:grid;grid-template-rows:auto 1fr auto;grid-template-columns:minmax(0,1fr);min-width:0;min-height:0}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:4px;flex-wrap:nowrap;
+  padding:6px 6px;border-bottom:1px solid var(--line);background:#0d1218;white-space:nowrap}
+.bar .grp{display:flex;gap:2px;align-items:center;flex-wrap:wrap;row-gap:4px;min-width:0}
+/* When the centre is too narrow for one row the toolbar wraps onto two, instead
+   of running into the right-hand panel. */
+.bar{flex-wrap:wrap;row-gap:4px}
+.bar .icon-btn{display:inline-grid;place-items:center;padding:3px 5px}
+/* The View menu: everything that changes what the view shows but is set once
+   and left (markers, regions, ring size, display resolution, Hide UI), one click
+   away instead of on the toolbar. The button names what is switched on. */
+.view-wrap{position:relative;display:inline-flex}
+.view-sum{color:var(--dim);font-weight:400;margin-left:4px}
+.bar .caret{margin-left:4px;font-size:8px;opacity:.7}
+.zoom-pct{min-width:44px;font-variant-numeric:tabular-nums}
+.view-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:60;min-width:236px;display:grid;gap:3px;padding:8px;
+  background:var(--site-bg);border:1px solid var(--line2);border-radius:8px;box-shadow:0 14px 40px rgba(0,0,0,.55);white-space:nowrap}
+.view-menu[hidden]{display:none}
+.view-menu .vm-label{font-size:9.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.07em;padding:0 8px 2px}
+.view-menu #toggleOv,.view-menu #toggleRgn,.view-menu #hideUi{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:5px 8px;font-size:11px;background:transparent;border-color:transparent}
+.view-menu #toggleOv:hover,.view-menu #toggleRgn:hover,.view-menu #hideUi:hover{background:var(--site-glass-hover)}
+.view-menu #toggleOv::before,.view-menu #toggleRgn::before{content:"";width:10px;height:10px;border-radius:3px;border:1px solid var(--line2);flex:none}
+.view-menu #toggleOv.on::before,.view-menu #toggleRgn.on::before{background:var(--key);border-color:var(--key)}
+.view-menu .ringctl,.view-menu .display-resolution{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:11px;padding:4px 8px}
+.view-menu .vm-sep{height:1px;background:var(--line);margin:3px 0}
+.view-menu kbd{margin-left:auto;font:10px var(--mono);color:var(--dim)}
+.bar button{padding:4px 6px;font-size:10px;line-height:1.25;white-space:nowrap}
+.bar .help-tip{width:11px;height:11px;font-size:7.5px;margin-left:1px}
+.display-resolution{display:inline-flex;align-items:center;gap:2px;color:var(--dim);font-size:10px;white-space:nowrap;margin-left:1px}
+.display-resolution>label{margin-right:2px}
+.display-resolution select{width:auto;padding:4px 2px;font-size:9.5px}
+.display-resolution select.on{border-color:var(--key);background:#12352d;color:#a8f0da}
+.display-resolution select:disabled{opacity:.4;cursor:not-allowed}
+.ringctl{display:flex;align-items:center;gap:4px;color:var(--dim);font-size:10px;white-space:nowrap;padding-left:1px;min-width:0}
+.ringctl input[type=range]{width:56px;margin:0;accent-color:#fff}
+.ringctl b{min-width:29px;color:var(--text);font-family:var(--mono);font-size:9.5px;text-align:right}
+.stage-wrap{position:relative;overflow:auto;background:#05070a;display:grid;place-items:center;min-height:0}
+.stage{position:relative;display:none;line-height:0;overflow:hidden}
+.stage-wrap,.sbs{grid-row:2;grid-column:1}
+main>.bar{grid-row:1}main>.status{grid-row:3}
+.stage-wrap.sbs-hidden{visibility:hidden}
+.sbs{display:grid;gap:4px;padding:4px;background:#020305;min-height:0;min-width:0;overflow:hidden;z-index:2}
+.sbs[hidden]{display:none}
+.sbs-panel{position:relative;min-width:0;min-height:0;border:1px solid var(--line2);border-radius:4px;overflow:hidden;background:#05070a}
+.sbs-panel canvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;touch-action:none}
+.sbs-panel.dragging canvas{cursor:grabbing}
+.sbs[data-tool=add] .sbs-panel canvas{cursor:crosshair}
+.sbs[data-tool=del] .sbs-panel canvas{cursor:cell}
+.sbs[data-tool=lasso] .sbs-panel canvas,.sbs[data-tool=delLasso] .sbs-panel canvas,.sbs[data-tool=trim] .sbs-panel canvas{cursor:crosshair}
+.sbs[data-tool=delRegion] .sbs-panel canvas{cursor:pointer}
+.sbs{position:relative}
+.sbs-close{position:absolute;right:4px;top:4px;width:22px;height:22px;padding:0;border-radius:4px;display:grid;place-items:center;font-size:15px;line-height:1;background:rgba(5,7,10,.78);color:#c9d3de;border-color:rgba(150,170,190,.3);opacity:.55}
+.sbs-panel:hover .sbs-close,.sbs-close:focus-visible{opacity:1}
+.sbs-restore{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:4px 6px;font-size:11px;color:var(--dim)}
+.sbs-restore button{padding:4px 8px;font-size:11px}
+.sbs-label{position:absolute;left:4px;top:4px;display:flex;align-items:center;gap:4px;padding:2px 6px;border-radius:3px;background:rgba(5,7,10,.78);color:#e8edf3;font-size:10.5px;line-height:1.3;pointer-events:none;max-width:calc(100% - 34px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sbs-label i{display:inline-block;width:8px;height:8px;border-radius:50%;flex:none}
+.stage canvas{display:block;max-width:none}
+#ov{position:absolute;left:0;top:0;cursor:crosshair;touch-action:none}
+/* Settings window: shortcut keys and the side-by-side crosshair. */
+.pts-card.settings-card{width:min(780px,96vw);background:var(--site-bg)}
+.settings-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;align-items:start}
+@media(max-width:720px){.settings-grid{grid-template-columns:1fr}}
+.settings-card h4{margin:8px 0 4px;font-size:13px;color:var(--site-tint-text)}
+.key-list{display:grid;gap:3px;margin:8px 0 6px}
+.key-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px}
+.key-btn{min-width:96px;font-family:var(--mono)}
+.key-btn.listening{border-color:var(--key);color:var(--key)}
+.key-fixed{display:inline-grid;place-items:center;min-height:24px;border:1px dashed var(--line2);border-radius:7px;color:var(--dim);font-size:11px}
+.settings-msg{min-height:18px;font-size:11.5px;color:var(--dim);margin-bottom:6px}
+#crossPreview{display:block;width:100%;height:120px;margin:8px 0 6px;border-radius:6px}
+.set-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;margin:7px 0}
+.set-val{display:flex;align-items:center;gap:8px}
+.set-val b{min-width:38px;text-align:right;font-weight:600}
+.settings-card .rowchk{margin:9px 0 12px}
+.settings-card .pan-checks .rowchk{margin:4px 0}
+.set-sub{font-size:12px;margin:10px 0 2px}
+.settings-card select{max-width:60%}
+/* Channel names in their channel's colour wherever they appear; in the light
+   theme mixed toward the page's ink so pale ones still read on white. */
+.ch-ink{color:var(--ch-ink);font-weight:600}
+:root[data-theme=light] .ch-ink{color:color-mix(in srgb,var(--ch-ink) 58%,rgb(var(--site-ink)))}
+/* Hide UI: only the counting area, filling the window. The panels and bars wait
+   just off screen and slide back over the image while the pointer is at their
+   edge: the left panel at the left, the right panel at the right, the header and
+   toolbar at the top. Hidden ones are invisible to the keyboard as well. */
+.show-ui{display:none}
+body.ui-hidden main>.status{display:none!important}
+body.ui-hidden .app>header,body.ui-hidden .layout>aside,body.ui-hidden main>.bar{position:fixed;z-index:45;visibility:hidden;background:var(--site-bg);
+  transition:transform .18s ease,visibility 0s linear .18s}
+body.ui-hidden .app>header{top:0;left:0;right:0;transform:translateY(-100%)}
+body.ui-hidden main>.bar{top:var(--peek-header-h,0px);left:0;right:0;transform:translateY(calc(-100% - var(--peek-header-h,0px)))}
+body.ui-hidden .layout>aside{top:0;bottom:0;left:0;width:min(344px,92vw);transform:translateX(-100%)}
+body.ui-hidden .layout>aside.right{left:auto;right:0;width:min(268px,92vw);transform:translateX(100%)}
+body.ui-hidden.peek-top .app>header,body.ui-hidden.peek-top main>.bar,
+body.ui-hidden.peek-left .layout>aside:not(.right),body.ui-hidden.peek-right .layout>aside.right{
+  visibility:visible;transform:none;transition:transform .18s ease,visibility 0s;box-shadow:0 0 28px rgba(0,0,0,.55)}
+body.ui-hidden main{position:fixed;inset:0;z-index:40;grid-template-rows:minmax(0,1fr)}
+body.ui-hidden .stage-wrap,body.ui-hidden .sbs{grid-row:1;grid-column:1;height:auto}
+body.ui-hidden .show-ui{display:block;position:fixed;top:10px;right:10px;z-index:41;opacity:.6}
+body.ui-hidden .show-ui:hover,body.ui-hidden .show-ui:focus-visible{opacity:1}
+/* The drag key held (Space unless changed in Settings): any tool drags the view. */
+.stage-wrap.pan-ready #ov,.sbs.pan-ready .sbs-panel canvas{cursor:grab}
+.stage-wrap.panning #ov{cursor:grabbing}
+.composite-legend{display:none;align-items:center;gap:10px;font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.01em;white-space:nowrap;flex:none}
+.composite-legend.on{display:inline-flex}
+.composite-legend span{white-space:nowrap;text-shadow:0 0 7px rgba(0,0,0,.9)}
+.composite-legend{gap:6px}
+.composite-legend button.tk-merge-swap{height:19px;font-size:10.5px}
+.blank{color:var(--dimmer);text-align:center;padding:40px;max-width:420px}
+.blank h3{color:var(--dim);font-size:14px;margin:0 0 8px;font-weight:600}
+.status{display:flex;justify-content:center;align-items:center;gap:20px;padding:4px 8px;
+  border-top:1px solid var(--line);background:#0d1218;color:var(--dim);
+  font-size:10.5px;font-family:var(--mono);min-height:22px;white-space:nowrap;overflow-x:auto;overflow-y:hidden}
+.status>#status{display:none!important}
+.status>.composite-legend.on{display:inline-flex!important}
+.keys{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:nowrap;white-space:nowrap;width:auto;flex:none}
+.keys>span{display:inline-flex;align-items:center;white-space:nowrap}
+.keys i{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;flex:none}
+
+.stats{display:flex;gap:4px;align-items:stretch}
+/* The one count most work needs; the breakdown is in the run record. */
+.count-total{display:flex;align-items:baseline;gap:8px;padding:2px 2px 0}
+.count-total b{font-family:var(--mono);font-size:28px;font-weight:500;letter-spacing:-.02em;line-height:1.1}
+.count-total span{font-size:11px;color:var(--dim)}
+#countBreakdown .stats{margin-top:4px}
+.stat{flex:1 1 0;min-width:0;background:#0d131a;border:1px solid var(--line);border-radius:7px;padding:6px 4px;text-align:center}
+.stat b{display:block;font-size:15px;font-family:var(--mono);font-weight:500;letter-spacing:-.02em;line-height:1.05}
+.stat span{display:block;font-size:8.5px;line-height:1.1;color:var(--dimmer);white-space:normal;margin-top:2px}
+#fileInput{display:none}
+.channel-buttons{display:flex;gap:6px;flex-wrap:wrap}
+.channel-buttons button,.z-row>.z-button{flex:1 1 auto;min-width:72px;padding:8px 10px;border-color:var(--line2);color:var(--dim);background:#151d27}
+.channel-buttons button.on,.z-row>.z-button.on{border-color:var(--ch,var(--key));background:color-mix(in srgb,var(--ch,var(--key)) 38%,#111820);color:#fff;font-weight:500;box-shadow:inset 0 0 0 1px var(--ch,var(--key))}
+/* The Z button shares the channels' row and their look. Beside it the channel
+   buttons give up their minimum width, so all of them stay on one line. */
+.channel-row{display:flex;gap:6px;align-items:stretch}
+.channel-row>.channel-buttons{flex:1 1 auto;min-width:0}
+.channel-row .channel-buttons button{min-width:0}
+/* Z layers: one button; the layer row shows while it (or the row) is hovered or focused. */
+.z-row{position:relative;flex:0 0 auto;display:flex}
+.z-row>.z-button{min-width:0;font-variant-numeric:tabular-nums;white-space:nowrap}
+.z-layers{position:absolute;right:0;top:100%;width:max-content;min-width:200px;max-width:260px;z-index:40;display:none;flex-wrap:wrap;gap:4px;padding:8px;border:1px solid var(--line2);border-radius:8px;background:#0e141b;box-shadow:0 12px 28px rgba(0,0,0,.5);touch-action:none;user-select:none}
+.z-row:hover .z-layers,.z-row:focus-within .z-layers,.z-row.dragging .z-layers{display:flex}
+.z-row.disabled .z-layers{display:none!important}
+.z-layers button{flex:0 0 auto;min-width:30px;padding:6px 0;border-color:var(--line2);color:var(--dim);background:#151d27;font-variant-numeric:tabular-nums}
+.z-layers button.on{border-color:var(--key);background:color-mix(in srgb,var(--key) 38%,#111820);color:#fff;font-weight:500;box-shadow:inset 0 0 0 1px var(--key)}
+.z-hint{flex:1 1 100%;margin-top:4px;font-size:10px;color:var(--dim);line-height:1.35}
+.z-layers button.z-align{flex:1 1 100%;margin-top:4px;padding:6px 8px;text-align:left;font-variant-numeric:normal}
+.z-layers button.z-align.busy{display:flex;align-items:center;gap:8px}
+.z-layers button.z-align.busy::before,.z-row>.z-button.busy::after{content:'';width:10px;height:10px;flex:0 0 10px;border-radius:50%;border:2px solid rgba(255,255,255,.2);border-top-color:var(--key);animation:zSpin .72s linear infinite}
+.z-row>.z-button.busy{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.z-auto{flex:1 1 100%;display:flex;align-items:flex-start;gap:6px;margin-top:4px;font-size:10.5px;line-height:1.35;color:var(--dim);cursor:pointer}
+.z-auto input{margin:1px 0 0;flex:none}
+/* Z layers being projected or lined up: a spinner over the image. */
+.z-working{position:fixed;z-index:60;display:grid;place-items:center;align-content:center;gap:10px;background:rgba(3,6,10,.55);color:#e6edf3;font-size:13px;font-weight:650;pointer-events:none}
+.z-working[hidden]{display:none}
+.z-working i{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.18);border-top-color:var(--key);animation:zSpin .72s linear infinite}
+@keyframes zSpin{to{transform:rotate(360deg)}}
+.mode-buttons{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:8px}
+.mode-buttons.one{grid-template-columns:1fr}
+.mode-buttons button{position:relative;padding:8px 6px;border-color:var(--line2);background:#151d27;color:var(--dim);font-size:11px}
+.mode-buttons button.has-analysis{padding-right:24px;border-color:#6b5d39;background:#1b2027;color:#e8edf3}
+.mode-buttons button.has-analysis::after{content:'✓';position:absolute;top:3px;right:4px;width:14px;height:14px;border-radius:50%;display:grid;place-items:center;background:#ffd166;color:#111820;font-size:9px;font-weight:900;line-height:1;box-shadow:0 0 0 1px rgba(255,209,102,.28)}
+.mode-buttons button.on{border-color:var(--key);background:color-mix(in srgb,var(--key) 30%,#111820);color:#fff;font-weight:500;box-shadow:inset 0 0 0 1px var(--key)}
+.mode-buttons button[data-mode=axon].on{border-color:#3cff7a;box-shadow:inset 0 0 0 1px #3cff7a}
+.mode-buttons button[data-mode=donut].on{border-color:#ff5a4f;box-shadow:inset 0 0 0 1px #ff5a4f}
+
+.rgn-head{display:flex;align-items:center;gap:8px}
+.copy-counts-menu{min-width:230px}
+.copy-counts-menu .copy-head{padding:4px 6px 6px;font-size:11px;color:var(--dim)}
+.copy-counts-menu .copy-row{display:flex;align-items:center;gap:6px;padding:2px 2px 2px 6px}
+.copy-counts-menu .copy-row .nm{flex:1;font-size:12px}
+.copy-counts-menu .copy-row .ct{font-size:10px;color:var(--dim);margin-right:2px}
+.copy-counts-menu .copy-row button{font-size:11px;padding:2px 8px;border:1px solid rgba(150,170,190,.3)}
+.icon-copy{display:grid;place-items:center;width:22px;height:20px;padding:0;border-radius:5px;color:var(--dim)}
+.icon-copy:hover:not(:disabled){color:var(--text)}
+.ana-dense{margin-left:4px;padding:0 6px;border:1px solid rgba(255,200,90,.45);border-radius:999px;color:#ffc85a;font-size:9.5px;font-weight:600}
+/* The reason a mode was picked shows while a mode button is hovered or focused. */
+#modeChooser{position:relative}
+#modeChooser #modeNote{display:none;position:absolute;left:0;right:0;top:100%;z-index:20;margin-top:4px;padding:8px 10px;border:1px solid var(--line2);border-radius:8px;background:#0d131a;box-shadow:0 6px 18px rgba(0,0,0,.45)}
+#modeChooser #modeNote:empty{display:none!important}
+#modeChooser:has(.mode-buttons button:hover) #modeNote,#modeChooser:has(.mode-buttons button:focus-visible) #modeNote{display:block}
+.page-drop{position:fixed;inset:0;z-index:100;display:none;place-items:center;background:rgba(4,6,9,.82);backdrop-filter:blur(3px);pointer-events:none}
+.page-drop.open{display:grid}
+.page-drop .msg{border:2px dashed var(--key);border-radius:16px;padding:32px 40px;background:#0d1717;color:#bdf5e4;font-size:18px;font-weight:650;box-shadow:0 16px 50px rgba(0,0,0,.45)}
+table.tbl{width:100%;border-collapse:collapse;font-size:11px;font-family:var(--mono)}
+table.tbl th{text-align:left;color:var(--dimmer);font-weight:500;padding:4px 6px;
+  border-bottom:1px solid var(--line);font-size:10px}
+table.tbl td{padding:4px 6px;border-bottom:1px solid #1a222c}
+table.tbl td.n{text-align:right}
+table.tbl tr.sel td{background:#16232e}
+
+.rgn{display:grid;grid-template-columns:16px minmax(0,1fr) auto auto;gap:8px;align-items:center;
+  padding:4px 6px;border:1px solid var(--line);border-radius:8px;background:#0d131a;margin-bottom:6px}
+.rgn.act{border-color:var(--key)}
+.rgn .sw{width:12px;height:12px;border-radius:3px}
+.rgn input[type=text]{background:#0a0f15!important;border:1px solid transparent;
+  border-radius:6px;padding:6px 8px!important;font-size:11px;min-width:0;cursor:text}
+.rgn input[type=text]:hover{border-color:var(--line2)}
+.rgn input[type=text]:focus{border-color:var(--key);background:#101922!important}
+.rgn .c{font-family:var(--mono);font-size:11px;color:var(--dim)}
+.rgn button{padding:2px 6px;font-size:10px;border-radius:6px}
+
+.q{border:1px solid var(--line);border-radius:8px;background:#0d131a;padding:10px;margin-top:10px}
+.q canvas{width:100%;image-rendering:pixelated;border-radius:6px;background:#000;display:block}
+.q .mt{font-family:var(--mono);font-size:10px;color:var(--dimmer);margin-top:6px;line-height:1.5}
+.bad{color:var(--bad)} .warnc{color:var(--warn)} .okc{color:var(--key)}
+.prog{height:3px;border-radius:99px;background:#1b232e;overflow:hidden;margin-top:8px;display:none}
+.prog.on{display:block} .prog i{display:block;height:100%;background:var(--key);width:30%;transition:width .2s}
+.analysis-progress{margin-top:10px;padding:10px 10px;border:1px solid var(--line);border-radius:8px;background:#0b1118;display:none}
+.analysis-progress.on{display:block}
+.ap-head{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:10.5px;font-family:var(--mono)}
+.ap-head b{color:var(--text);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ap-head span{color:var(--key);font-weight:700;flex:none}
+.ap-track{height:4px;border-radius:99px;background:#1b232e;overflow:hidden;margin:8px 0 8px}
+.ap-track i{display:block;height:100%;width:0;background:var(--key);transition:width .18s ease}
+.ap-stage{font-size:11px;font-weight:700;color:#fff;line-height:1.3}
+.ap-detail{font-size:9.5px;color:var(--dim);line-height:1.35;margin-top:4px}
+.ap-context{font:600 9px/1.3 var(--mono);color:var(--dimmer);margin-top:6px}
+.ap-log{display:grid;gap:4px;margin-top:8px;padding-top:8px;border-top:1px solid #18212c}
+.ap-log div{font:500 9px/1.3 var(--mono);color:var(--dimmer);display:flex;gap:6px}
+.ap-log div::before{content:'✓';color:#5ad3b0;font-weight:800;flex:none}
+.ap-log div.current::before{content:'›';color:var(--key)}
+.ap-log div.current{color:var(--dim)}
+
+.section-analysis{display:grid;gap:10px}
+.section-analysis .ana-block{display:grid;gap:6px}
+.section-analysis .ana-title{font-size:11px;color:var(--dimmer);font-weight:500}
+.section-analysis table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10px}
+.section-analysis th,.section-analysis td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.section-analysis th{color:var(--dimmer);font-weight:500}
+.section-analysis td.num,.section-analysis th.num{text-align:right;font-variant-numeric:tabular-nums}
+.section-analysis .ana-strong{color:var(--text);font-weight:500}
+.section-analysis-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.section-analysis-head h2{margin:0;font-size:13px;font-weight:600}
+/* Narrower windows (a tablet, a small laptop): Counts, Regions and Export move
+   under the image, side by side, instead of being hidden, and the page scrolls.
+   On a phone the image toolbar wraps instead of widening the page. */
+@media(max-width:1180px){.app{height:auto}.layout{grid-template-columns:320px minmax(0,1fr)}.stage-wrap{height:70vh}
+  aside.right{grid-column:1/-1;border-left:0;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px;align-items:start}
+  aside.right>.card{margin-bottom:0}}
+@media(max-width:820px){.layout{grid-template-columns:1fr}
+  aside{border-right:0;border-bottom:1px solid var(--line)}.stage-wrap{height:66vh}
+  .bar{flex-wrap:wrap;white-space:normal;row-gap:4px}.bar .grp{flex-wrap:wrap}}
+/* Multipoint ND2: the points window, as in Image Prep (see src/soma/12-nd2-points.part.js). */
+.pts-modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;place-items:center;z-index:2000100}
+.pts-modal.show{display:grid}
+.pts-card{width:min(1180px,97vw);max-height:96vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px;box-shadow:0 22px 70px #000;color:var(--text)}
+.pts-card h3{margin:0 0 6px;font-size:15px}.pts-card .pts-info{font-size:11px;color:var(--dim)}
+.pts-card button{padding:4px 10px;font-size:12px}
+.pts-actions{display:flex;justify-content:flex-end;gap:8px;align-items:center;margin-top:10px}
+.nd2-points-layout{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:12px;margin-top:10px;align-items:start}
+.nd2-points-mapwrap{border:1px solid #1c232b;border-radius:8px;background:#07090c;padding:8px;min-width:0}
+.nd2-points-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px}.nd2-points-tools button{padding:4px 8px;font-size:11px}
+.nd2-points-tools button[aria-pressed="true"]{background:#2b5d80;color:#fff;border-color:#3b7fae}
+.nd2-points-hint{font-size:10.5px;color:#7d8894}
+.nd2-points-map{display:block;width:100%;height:min(62vh,560px);user-select:none;touch-action:none;cursor:crosshair}
+.nd2-points-map .pt{cursor:pointer}.nd2-points-map .pt-frame{fill:none;vector-effect:non-scaling-stroke;stroke-width:2}
+.nd2-points-map .pt.sel .pt-frame{stroke-width:4}.nd2-points-map .pt .pt-ring{fill:none;stroke:#fff;stroke-width:1.5;vector-effect:non-scaling-stroke;display:none}.nd2-points-map .pt.sel .pt-ring{display:block}
+.nd2-points-map .pt-bg{fill:#151b22}.nd2-points-map .pt-name{fill:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:700;paint-order:stroke;stroke:#000;stroke-width:3px;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.nd2-points-map .marquee{fill:rgba(0,168,255,.12);stroke:#00a8ff;stroke-dasharray:4 3;vector-effect:non-scaling-stroke}
+.nd2-points-stage{position:relative}
+.nd2-points-align{display:inline-flex;gap:4px;align-items:center;font-size:11px;color:#c9d2db;padding:2px 6px;border:1px solid #2a333d;border-radius:6px}
+.nd2-point-view{position:absolute;inset:0;display:flex;flex-direction:column;background:#07090c;border-radius:6px;z-index:2}.nd2-point-view[hidden]{display:none}
+.npv-head{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:#e3e9ef;padding-bottom:6px}.npv-head button{padding:4px 10px;font-size:12px}.npv-head label{display:inline-flex;gap:4px;align-items:center;font-size:11px;color:#c9d2db}
+.npv-head b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.npv-body{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:#000;border-radius:4px;overflow:hidden}.npv-body img{max-width:100%;max-height:100%;object-fit:contain}
+.npv-note{min-height:16px;padding-top:4px;color:#9fd3ff;font-size:11px}
+.nd2-points-side-head{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:12px;color:#d6dde5}.nd2-points-side-head button{padding:4px 8px;font-size:11px}
+.nd2-points-side-hint{margin:4px 0 8px;color:#7d8894;font-size:10.5px}
+.nd2-points-groups{display:grid;gap:6px;max-height:min(52vh,470px);overflow:auto}
+.pg-row{display:grid;grid-template-columns:12px minmax(0,1fr) minmax(0,1.4fr);grid-template-rows:auto auto;gap:4px 6px;align-items:center;padding:6px;border-radius:6px;background:#0f141a;border:1px solid #1c232b}
+.pg-swatch{width:12px;height:12px;border-radius:3px;grid-row:1}.pg-row input{min-width:0;font-size:11.5px}
+.pg-foot{grid-column:2/-1;display:flex;gap:6px;align-items:center;font-size:10.5px;color:#8b97a3}.pg-foot button{padding:2px 8px;font-size:10.5px}.pg-foot .pg-count{margin-right:auto}
+.nd2-points-status{min-height:16px;margin-top:6px;color:#9fd3ff;font-size:11px}.nd2-points-status.err{color:#ff8a8a}
+.nd2-points-count{margin-right:auto;font-size:11.5px;color:#aab6c2}
+@media (max-width:820px){.nd2-points-layout{grid-template-columns:1fr}}
+</style>
+
+<style id="toolkit-back-uniform">
+.toolkit-back{display:inline-flex;align-items:center;gap:4px;flex:none;color:#9aa4ae;text-decoration:none;font:600 12px/1.2 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;white-space:nowrap;opacity:.9;transition:color .12s ease,opacity .12s ease}
+.toolkit-back:hover{color:#fff;opacity:1}
+.wrap>.toolkit-back{margin-bottom:8px}
+.toolkit-header-left{display:flex;align-items:center;gap:12px;min-width:0}
+</style>
+
+<link rel="stylesheet" href="assets/toolkit-core.css">
+<script src="assets/toolkit-core.js"></script>
+<link rel="stylesheet" href="assets/site-theme.css">
+<style id="site-look">
+/* The homepage's night sky (assets/site-theme.css): its gradient and stars
+   behind glassy panels, the tool's icon by its title, one accent in this
+   tool's homepage colour, sentence-case panel titles, and no monospace. */
+:root{--tint:127,227,190;
+  --bg:var(--site-bg);--panel:var(--site-panel);--panel2:var(--site-glass-2);--line:var(--site-glass-line);--line2:var(--site-glass-line-2);
+  --text:var(--site-text);--dim:var(--site-muted);--dimmer:var(--site-faint);--key:rgb(var(--tint));--mono:var(--site-font)}
+html{background:var(--site-bg)}
+html,body{font-family:var(--site-font);font-variant-numeric:tabular-nums}
+.app,header,aside,main{background:transparent}
+.bar,.status{background:var(--site-bar)}
+header{padding:16px 20px}
+.toolkit-header-left{display:flex;align-items:center;gap:16px}
+h1{font-size:19px;font-weight:650;letter-spacing:-.02em}
+button,select,input[type=number],input[type=text],.channel-buttons button,.z-row>.z-button,.mode-buttons button{background:var(--site-glass-2);border-color:var(--line2);border-radius:9px}
+button:hover:not(:disabled){background:var(--site-glass-hover);border-color:var(--site-glass-line-hover)}
+button.primary,button.on,.chip.on,.display-resolution select.on{background:rgba(var(--tint),.14);border-color:rgba(var(--tint),.55);color:var(--text)}
+button.primary:hover:not(:disabled),button.on:hover:not(:disabled){background:rgba(var(--tint),.2)}
+.card{background:var(--panel);border-color:var(--line);border-radius:14px}
+.card > h2{font-size:13px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--site-tint-text);margin-bottom:12px}
+.card > h2 .n{font-weight:400;color:var(--dimmer)}
+.pill{border:0;border-color:transparent;padding:0;font-size:12px;gap:6px}
+.drop{background:transparent;border-color:var(--line2)}
+.drop.over{background:rgba(var(--tint),.06)}
+.stat,.rgn,.q,.histwrap,.chip{background:var(--panel2)}
+.stat b{font-size:16px;font-weight:500}
+.stat span{font-size:10px}
+.row:hover,.row.cur{background:var(--panel2)}
+.stage-wrap{background:var(--site-well)}
+.sbs{background:rgba(1,2,4,.85)}
+.sbs-panel{background:#04060a}
+.rgn input[type=text]{background:transparent!important}
+.rgn input[type=text]:focus{background:var(--site-glass-hover)!important}
+table.tbl td{border-bottom-color:var(--line)}
+.page-drop .msg{background:var(--site-menu);color:var(--text)}
+.z-layers,#modeChooser #modeNote,#helpBubble,.merge-role-menu{background:var(--site-menu)}
+</style>
+<script src="assets/toolkit-theme.js"></script>
+</head>
+<body class="site-sky">
+<div class="app">
+<header>
+  <div class="toolkit-header-left">
+    <a class="toolkit-back" href="https://github.com/rwu92/soma-quantification#readme" aria-label="Documentation and source code">Documentation</a>
+    <img class="site-tool-icon" src="assets/icons/soma.png" alt="">
+    <div>
+    <h1>Soma Quantification</h1>
+    </div>
+  </div>
+  <div class="pill"><span id="engDot" class="dot"></span><span id="engTxt">idle</span></div>
+</header>
+
+<div class="layout">
+<!-- ============================ LEFT ============================ -->
+<aside>
+  <section class="card">
+    <h2>Images <span class="files-head"><span class="n" id="fileCount"></span><button id="addImages" type="button" class="add-images" hidden title="Open more images. The ones already open stay, with their analyses.">+ Add</button></span></h2>
+    <div id="drop" class="drop">
+      <b>Drop images or click to choose</b>
+      <div class="hint" title="Files whose names differ only in a trailing _C_&lt;n&gt; are grouped into one section, so channels stay together. Inverted images are detected automatically.">PNG · JPEG · TIFF · ND2</div>
+    </div>
+    <input id="fileInput" type="file" multiple accept=".nd2,.tif,.tiff,.png,.jpg,.jpeg,image/*">
+    <div id="fileList" class="list" hidden></div>
+
+    <div id="prog" class="prog"><i></i></div>
+  </section>
+
+  <section class="card">
+    <h2 style="display:flex;align-items:center;gap:6px">Section <span id="imageInfoHost"></span></h2>
+    <div class="f" id="detectRow" hidden>
+      <div class="lr"><label>Channels</label></div>
+      <div class="channel-row">
+      <div id="channelButtons" class="channel-buttons"></div>
+      <div id="zRow" class="z-row disabled">
+        <button type="button" id="zButton" class="z-button" aria-haspopup="true" aria-controls="zLayers" disabled title="Z layers: open a Z-stack ND2 to choose which layers are projected.">Z</button>
+        <div id="zLayers" class="z-layers" role="group" aria-label="Z layers to project"></div>
+      </div>
+      </div>
+      <select id="chDetect" hidden aria-hidden="true" tabindex="-1"></select>
+      <div id="modeChooser">
+        <div class="lr" style="margin-top:10px"><label>Detection mode</label><span id="modeChannel" class="v alt"></span></div>
+        <div id="modeButtons" class="mode-buttons">
+          <button type="button" data-mode="normal">Normal</button>
+          <button type="button" data-mode="donut">Donut</button>
+        </div>
+        <div id="modeNote" class="note"></div>
+      </div>
+    </div>
+    <div class="f" hidden aria-hidden="true">
+      <div class="lr"><label for="pxSize">Pixel size<span class="help-tip" tabindex="0" data-tip="Read from ND2 files. Set it and every size below is also shown in µm, so the same settings transfer between objectives and animals."></span></label><span id="pxSrc" class="v alt">not set</span></div>
+      <input id="pxSize" type="number" step="0.001" min="0" value="0" placeholder="µm / pixel">
+      <div hidden aria-hidden="true">
+        <select id="zHandling"><option value="max">Max projection</option><option value="slice">Single Z slice</option></select>
+        <select id="splitRGB" title="A colour file can be one channel shown through a LUT, or a merge of two or three. Split takes a merge apart so each fluorophore is measured separately; single treats the picture as one image.">
+          <option value="auto">Colour merges: split automatically</option>
+          <option value="split">Always split into channels</option>
+          <option value="single">Never split — treat as one image</option>
+        </select>
+        <select id="polarity">
+          <option value="auto">Polarity: detect automatically</option>
+          <option value="bright">Bright somata on dark</option>
+          <option value="dark">Dark somata on light (inverted)</option>
+        </select>
+<div id="imgMeta" class="note"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Detection</h2>
+
+    <div class="f" hidden aria-hidden="true">
+      <label class="rowchk"><input id="fillHoles" type="checkbox">
+        Donut-shaped somata<span class="help-tip" tabindex="0" data-tip="For cytoplasmic stains such as TH, where the soma looks like a ring. Leave off for labels that fill the cell."></span></label>
+    </div>
+
+    <div class="acts">
+      <button id="runSelectedBtn" disabled title="Analyse only the currently selected channel or composite in this section">Analyse selected</button>
+      <button id="runBtn" class="primary" disabled title="Analyse every available single channel and composite in this section">Analyse section</button>
+      <button id="runAllBtn" disabled title="Analyse every available single channel and composite across all loaded sections">Analyse all</button>
+    </div>
+
+    <div id="analysisProgress" class="analysis-progress" aria-live="polite" aria-atomic="false">
+      <div class="ap-head"><b id="apTitle">Analysis</b><span id="apPct">0%</span></div>
+      <div class="ap-track"><i id="apBar"></i></div>
+      <div id="apStage" class="ap-stage">Preparing detector…</div>
+      <div id="apDetail" class="ap-detail"></div>
+      <div id="apContext" class="ap-context"></div>
+      <div id="apLog" class="ap-log"></div>
+    </div>
+
+    <!-- The fine controls are never needed in normal work: sizes follow the pixel
+         size, the floors and classifier set themselves. They stay on the page,
+         hidden, so their defaults and saved analyses keep working. -->
+    <details id="advDetails" hidden aria-hidden="true">
+    <div class="f" id="countBreakdown">
+      <div class="lr"><label>Count breakdown</label></div>
+      <div class="stats">
+        <div class="stat" title="Found by the analysis and kept"><b id="sAuto">0</b><span>automatic</span></div>
+        <div class="stat" title="Added by hand"><b id="sManual">0</b><span>manual added</span></div>
+        <div class="stat" title="Removed by hand"><b id="sDropped">0</b><span>manual removed</span></div>
+      </div>
+    </div>
+    <div class="f" id="axonModeWrap">
+      <div class="lr"><label>Axon-heavy mode<span class="help-tip" tabindex="0" data-tip="For channels dense with axons and neuropil: cells come only from those found in the other channels, then pass an anti-axon shape test. Normal or Donut switch back."></span></label><span id="modeChannelAdv" class="v alt"></span></div>
+      <div id="modeButtonsAdv" class="mode-buttons one">
+        <button type="button" data-mode="axon">Axon-heavy</button>
+      </div>
+    </div>
+    <div class="f" id="colocFloorWrap" hidden>
+      <div class="lr"><label for="colocFloor">Colocalization floor<span class="help-tip" tabindex="0" data-tip="How much of each soma has strong, balanced signal in the selected channels. Colocalisation composites only."></span></label><span class="v"><span id="colocFloorV">off</span>
+        <button id="colocFloorAuto" style="padding:2px 8px;font-size:10px;border-radius:6px;margin-left:6px">auto</button></span></div>
+      <div class="histwrap">
+        <canvas id="colocHist" height="52"></canvas>
+        <input id="colocFloor" type="range" min="0" max="100" step="1" value="0">
+      </div>
+      <div id="colocFloorNote" class="note"></div>
+    </div>
+    <div class="f">
+      <div class="lr"><label for="minContrast">Brightness floor<span class="help-tip" tabindex="0" data-tip="Hides detections dimmer than the line, live. The band shows how many sit at each brightness; the thin left tail is usually junk."></span></label><span class="v"><span id="minContrastV">0</span>
+        <button id="floorAuto" style="padding:2px 8px;font-size:10px;border-radius:6px;margin-left:6px">auto</button></span></div>
+      <div class="histwrap">
+        <canvas id="contrastHist" height="52"></canvas>
+        <input id="minContrast" type="range" min="0" max="1000" value="0">
+      </div>
+      <div class="lr" style="margin-top:6px"><label for="floorMode">Apply brightness floor<span class="help-tip" tabindex="0" data-tip="Donut only (default): drops dim detections in Donut analyses. All modes: also Axon-heavy, merges and Normal (there only once you move it). Off: nothing dropped for dimness."></span></label></div>
+      <select id="floorMode"><option value="donut" selected>Donut mode only</option><option value="all">All modes</option><option value="off">Off</option></select>
+      <div id="contrastNote" class="note"></div>
+    </div>
+    <div class="f">
+      <div class="lr"><label for="snr">Signal threshold<span class="help-tip" tabindex="0" data-tip="Signal needed above local background, in noise units. Below 3, touching somata start to merge."></span></label><span class="v"><span id="snrV">4.0</span> σ</span></div>
+      <input id="snr" type="range" min="10" max="150" value="40">
+
+      <div id="snrWarn" class="note"></div>
+    </div>
+    <div class="f">
+      <div class="lr"><label for="thin">Narrowest soma<span class="help-tip" tabindex="0" data-tip="Width of the thinnest soma you would count; anything narrower is a process. The most sensitive setting."></span></label><span class="v"><span id="thinV">8</span> px wide<span id="thinU" class="v alt"></span></span></div>
+      <input id="thin" type="range" min="4" max="60" value="8">
+
+    </div>
+
+      <div class="acts" style="margin-top:0">
+        <button id="fitSizes" title="Set soma sizes from the pixel size">Fit sizes to pixel size</button>
+      </div>
+      <div id="sizeWarn" class="note"></div>
+      <div id="densityNote" class="note"></div>
+
+      <div class="note" style="margin-bottom:8px">Set by the defaults or by <em>Fit sizes</em>.</div>
+
+      <div class="f">
+        <div class="lr"><label for="dMin">Smallest soma</label><span class="v"><span id="dMinV">16</span> px<span id="dMinU" class="v alt"></span></span></div>
+        <input id="dMin" type="range" min="6" max="90" value="16">
+      </div>
+      <div class="f">
+        <div class="lr"><label for="dMax">Largest soma</label><span class="v"><span id="dMaxV">44</span> px<span id="dMaxU" class="v alt"></span></span></div>
+        <input id="dMax" type="range" min="8" max="160" value="44">
+      </div>
+      <div class="f">
+        <div class="lr"><label for="split">Clump splitting<span class="help-tip" tabindex="0" data-tip="How close two soma centres can be and still be counted separately. Set below the smallest soma and single cells start splitting in two."></span></label><span class="v">closest centres <span id="splitV">12</span> px</span></div>
+        <input id="split" type="range" min="40" max="140" value="72">
+
+      </div>
+      <div class="f">
+        <div class="lr"><label for="edge">Tissue edge margin<span class="help-tip" tabindex="0" data-tip="Nothing is counted outside the tissue, or within this distance of a cut edge. 0 only if no edge is in frame."></span></label><span class="v"><span id="edgeV">48</span> px<span id="edgeU" class="v alt"></span></span></div>
+        <input id="edge" type="range" min="0" max="200" value="48">
+
+      </div>
+      <div class="f">
+        <label class="rowchk" style="margin-bottom:10px"><input id="satRescue" type="checkbox" checked>
+        Rescue saturated somata<span class="help-tip" tabindex="0" data-tip="Counts somata at the camera's ceiling even with little contrast. Turns itself off if over 2% of the tissue is saturated."></span></label>
+        <div class="lr"><label for="cellModel">Cell classifier<span class="help-tip" tabindex="0" data-tip="Cell-centre network (default): trained on your hand-corrected counts; on unseen animals 7.4% count error (Normal), 12.5% (Donut). Forest: older Normal classifier. Rules: limits."></span></label></div>
+        <select id="cellModel" style="margin-bottom:10px"><option value="somaNet-v1" selected>Cell-centre network (somaNet v1)</option><option value="somaHandRF-v1">Hand-count forest (somaHandRF v1)</option><option value="rules">Rules only</option></select>
+        <label class="rowchk" style="margin-bottom:10px"><input id="legacyForests" type="checkbox">
+        Legacy random-forest filters<span class="help-tip" tabindex="0" data-tip="Off by default. Older, unvalidated forests; turn on only to reproduce earlier results."></span></label>
+
+      <div class="lr"><label for="maxAspect">Maximum elongation<span class="help-tip" tabindex="0" data-tip="Rejects only shapes longer and thinner than any soma (fusiform neurons are about 2:1)."></span></label><span class="v"><span id="maxAspectV">5.0</span> : 1</span></div>
+        <input id="maxAspect" type="range" min="15" max="120" value="50">
+
+      </div>
+      <div class="g2 f">
+        <div><label for="areaLo">Area floor ×</label><input id="areaLo" type="number" step="0.05" value="1.00"></div>
+        <div><label for="areaHi">Area ceiling ×</label><input id="areaHi" type="number" step="0.1" value="1.80"></div>
+      </div>
+          <div class="acts">
+        <select id="density" title="Axon density decides the signal threshold, measured from how high the local background sits relative to the bright end of the channel. Leave on automatic unless the reading looks wrong.">
+          <option value="auto">Axon density: measure it</option>
+          <option value="sparse">Force axon-sparse (4.0σ)</option>
+          <option value="dense">Force axon-dense (2.8σ)</option>
+        </select>
+        <button id="presetReset">Reset</button>
+      </div>
+      <div class="f">
+        <div class="lr"><label for="viewMode">Debug display</label></div>
+        <select id="viewMode">
+          <option value="color">Colour</option>
+          <option value="image">Grey</option>
+        </select>
+      </div>
+      <div class="f">
+        <div class="lr"><label>Review data export</label></div>
+        <div class="acts" style="margin-top:0">
+          <button id="expDecisions" disabled title="Export your manual additions and removals, together with the detector measurements for those decisions, as a CSV you can send with the source image for detector tuning.">Review decisions CSV</button>
+        </div>
+      </div>
+    </details>
+
+  <section class="card" hidden aria-hidden="true">
+    <h2>Colocalisation</h2>
+    <div class="f">
+      <div class="lr"><label for="colocThr">White-overlap strength<span class="help-tip" tabindex="0" data-tip="Scores a soma pixel only where both channels are above their own background and similar in strength: the white of a merge."></span></label><span class="v"><span id="colocThrV">6</span>%</span></div>
+      <input id="colocThr" type="range" min="1" max="25" value="6">
+    </div>
+    <div class="f">
+      <div class="lr"><label for="bleed">Bleed-through<span class="help-tip" tabindex="0" data-tip="Measure on a single-label control section and keep it fixed for the cohort, or bleed-through looks like co-expression."></span></label><span class="v"><span id="bleedV">0</span> %</span></div>
+      <input id="bleed" type="range" min="0" max="60" value="0">
+
+    </div>
+    <div class="f">
+      <div class="lr"><label for="minFill">White overlap area<span class="help-tip" tabindex="0" data-tip="Share of the soma that must have balanced signal in both channels."></span></label><span class="v"><span id="minFillV">30</span>% of the soma</span></div>
+      <input id="minFill" type="range" min="10" max="80" value="30">
+    </div>
+    <div id="colocOut" class="note"></div>
+    <div class="note">Dual-positive cells are now detected from either selected channel, then tested for spatially overlapping, balanced signal after independent 0.1–99.8% normalization. This is designed to follow visibly white somata rather than broadly tinted cells.</div>
+  </section>
+</aside>
+
+<!-- ============================ CENTRE ============================ -->
+<main>
+  <div class="bar">
+    <div class="grp">
+      <button id="tAdd" class="on">Add</button>
+      <button id="tDel" title="Click to remove the somata under the brush; drag to pan. Click Remove again for a remove lasso that takes out every soma inside a loop.">Remove</button>
+      <button id="tLasso" title="Drag a freehand loop around counted somata to assign them to the active region. Use it for SN and VTA.">Lasso</button>
+      <button id="undoBtn" disabled>Undo</button>
+    </div>
+    <div class="grp">
+      <input id="showAs" type="hidden" value="source">
+      <button id="zOut" aria-label="Zoom out" title="Zoom out">−</button><button id="zFit" class="zoom-pct" title="Magnification (screen pixels per image pixel). Click to fit the image to the view.">Fit</button><button id="zIn" aria-label="Zoom in" title="Zoom in">+</button>
+      <button id="sideBySide" title="Every channel and merge side by side, at the same place and zoom, for judging colocalisation (P). Drag or scroll to move all, Ctrl/pinch or + / − to zoom, Esc to close. Dots and regions can be edited in any panel.">Side by side</button>
+      <div class="view-wrap">
+        <button id="viewBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="viewMenu" title="What the view shows: markers, regions, ring size, display resolution, Hide UI">View<span id="viewSummary" class="view-sum"></span><span class="caret" aria-hidden="true">▾</span></button>
+        <div id="viewMenu" class="view-menu" aria-label="View options" hidden>
+          <div class="vm-label">Show</div>
+          <button id="toggleOv" class="on">Markers</button><button id="toggleRgn" class="on" title="Show or hide the drawn regions. Counts per region are unchanged; drawing or cutting a region shows them again.">Regions</button>
+          <label class="ringctl" for="ringSize" title="100% is the original ring. Shrinking scales the whole marker while its hollow center closes progressively until the minimum size becomes a dot; detection is unchanged.">
+            <span>Ring size</span><input id="ringSize" type="range" min="5" max="160" step="5" value="100"><b id="ringSizeV">100%</b>
+          </label>
+          <span class="display-resolution" title="Analysis always uses the native full-resolution ND2. This changes review display only."><label for="displayScale">Display</label><select id="displayScale"><option value="0.25">25%</option><option value="0.3333333333333333">33%</option><option value="0.5" selected>50%</option><option value="0.75">75%</option><option value="full">Full</option></select></span>
+          <div class="vm-sep"></div>
+          <button id="hideUi" type="button" title="Hide everything but the image (H). H, Esc or Show UI brings it back.">Hide UI<kbd id="hideUiKey">H</kbd></button>
+        </div>
+      </div>
+      <button id="settingsBtn" class="icon-btn" aria-label="Settings" title="Settings: shortcut keys and the side-by-side crosshair"><svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><circle cx="8" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="4.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.2v2M8 12.8v2M1.2 8h2M12.8 8h2M3.2 3.2l1.4 1.4M11.4 11.4l1.4 1.4M3.2 12.8l1.4-1.4M11.4 4.6l1.4-1.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button>
+    </div>
+  </div>
+  <button id="showUi" class="show-ui" type="button" title="Show the controls again (H or Esc)">Show UI</button>
+  <div id="sbs" class="sbs" hidden aria-label="Channels and merges side by side"></div>
+  <div id="stageWrap" class="stage-wrap">
+    <div id="blank" class="blank">
+      <h3>No section loaded</h3>
+      Drop your channel images on the left.
+    </div>
+    <div id="stage" class="stage">
+      <canvas id="base"></canvas>
+      <canvas id="ov"></canvas>
+    </div>
+  </div>
+  <div class="status">
+    <span id="status">Ready</span>
+    <span id="compositeLegend" class="composite-legend" aria-label="Channel colours"></span>
+    <span id="markerKeys" class="keys">
+      <span><i style="background:#5ad3b0"></i>detected</span>
+      <span><i style="background:#6fa8f5"></i>added by hand</span>
+    </span>
+  </div>
+</main>
+
+<!-- ============================ RIGHT ============================ -->
+<aside class="right">
+  <section class="card">
+    <h2>Counts <span class="rgn-head"><button id="copyCells" type="button" class="add-images" disabled title="Analyse or add somata here to copy them to another channel">Copy to</button><button id="clearCells" type="button" class="add-images" disabled title="Nothing counted here to clear">Clear</button></span></h2>
+    <div class="count-total" title="Somata counted in the view on screen: found automatically plus added by hand"><b id="sTotal">0</b><span>somata counted</span></div>
+    <div id="rejOut" hidden></div>
+  </section>
+
+  <section class="card" id="sectionAnalysisCard" hidden>
+    <div class="section-analysis-head">
+      <h2>Section analysis</h2>
+    </div>
+    <div id="sectionAnalysisOut" class="section-analysis"></div>
+  </section>
+
+  <section class="card">
+    <h2>Regions <span class="rgn-head"><span class="n" id="rgnHint">draw to add</span><button id="copyCounts" type="button" class="icon-copy" disabled aria-label="Copy region counts" title="Draw regions to copy their counts"><svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10.5 3.5v-.5A1.5 1.5 0 0 0 9 1.5H3A1.5 1.5 0 0 0 1.5 3v6A1.5 1.5 0 0 0 3 10.5h.5" fill="none" stroke="currentColor" stroke-width="1.4"/></svg></button></span></h2>
+    <div id="rgnList"></div>
+    <div class="acts rgn-tools"><button id="rgnAdd" class="icon-tool" type="button" aria-label="New region" title="New region: draw a new named region with the lasso"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v10M3 8h10"/></svg></button><button id="rgnTrim" class="icon-tool" type="button" aria-label="Trim region" title="Trim region: loop around the part of a region to cut away. Across an edge trims it, right through splits it, inside leaves a hole. Undo puts it back. Click again to stop."><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="4.2" cy="11.8" r="1.9"/><circle cx="11.8" cy="11.8" r="1.9"/><path d="M5.6 10.5 12.5 2.5M10.4 10.5 3.5 2.5"/></svg></button><button id="rgnDeleteOutline" class="icon-tool danger" type="button" aria-label="Delete outline" title="Delete outline: click this, then click inside or on the one drawn outline to remove. Other outlines in the same named region are kept."><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6C2.5 3.8 4.5 2.5 7.5 2.5s5 1.2 5 3.4-1.4 2.4-1.4 4.1-1.8 2.5-4 2.5S2.5 11.6 2.5 9.4z" stroke-dasharray="2 1.6"/><path d="M9.6 9.6l4 4M13.6 9.6l-4 4"/></svg></button><button id="rgnClear" class="icon-tool danger" type="button" aria-label="Clear all regions" title="Clear all regions (undo brings them back)"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5h10M6.3 4.5V3h3.4v1.5M4.4 4.5l.7 9h5.8l.7-9M6.8 7v4M9.2 7v4"/></svg></button></div>
+    <table class="tbl" id="rgnTable" hidden aria-hidden="true"></table>
+  </section>
+
+  <section class="card">
+    <h2>Export</h2>
+    <div class="export-actions">
+      <div class="export-tiff-label">ImageJ TIFF</div>
+      <div class="export-row export-row-tiff">
+        <button id="expRoi" disabled title="Export the currently selected analyzed view as a full-resolution ImageJ TIFF with dot ROIs and embedded Soma state.">Selected</button>
+        <button id="expRoiSection" disabled title="Export every view of the open image as ImageJ TIFF files in one ZIP. Each analysed TIFF can be reopened in Soma with its dot ROIs and saved analysis state.">Section</button>
+        <button id="expRoiAll" disabled title="Export every image's views as ImageJ TIFF files in one ZIP, grouped into one folder per source ND2. Each analysed TIFF can be reopened in Soma with its dot ROIs and saved analysis state.">All</button>
+      </div>
+      <label class="rowchk export-only" title="On: only views with an analysis or hand counts. Off: channels never analysed are exported too, as plain pictures without dots."><input id="expOnlyAnalysed" type="checkbox" checked>Only analysed views</label>
+    </div>
+    <div hidden aria-hidden="true">
+      <button id="expCells" disabled></button><button id="expSummary" disabled></button>
+      <button id="expRun" disabled></button><button id="expPng" disabled></button>
+    </div>
+  </section>
+</aside>
+</div>
+
+<div id="pageDrop" class="page-drop" aria-hidden="true"><div class="msg">Drop images to load</div></div>
+<div id="helpBubble" role="tooltip"></div>
+
+</div>
+
+
+
+<div id="removeModal" class="pts-modal" role="alertdialog" aria-modal="true" aria-labelledby="removeTitle" aria-describedby="removeText"><div class="pts-card remove-card">
+  <h3 id="removeTitle">Remove this image?</h3>
+  <p id="removeText" class="remove-text"></p>
+  <label class="rowchk"><input id="removeNoAsk" type="checkbox"> Don't show this again</label>
+  <div class="pts-actions"><button id="removeCancel" type="button">Cancel</button><button id="removeConfirm" type="button" class="danger">Remove</button></div>
+</div></div>
+<div id="settingsModal" class="pts-modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle"><div class="pts-card settings-card">
+  <h3 id="settingsTitle">Settings</h3>
+  <div class="settings-grid">
+    <section>
+      <h4>Shortcut keys</h4>
+      <div id="keyList" class="key-list"></div>
+      <div class="settings-msg" id="settingsMsg" aria-live="polite"></div>
+      <button id="resetKeys" type="button">Reset keys</button>
+      <h4>Images</h4>
+      <label class="rowchk"><input id="confirmRemoveOn" type="checkbox"> Ask before removing an image</label>
+    </section>
+    <section>
+      <h4>Side-by-side crosshair</h4>
+      <canvas id="crossPreview" aria-label="Preview of the crosshair"></canvas>
+      <label class="set-row" for="crossReal"><span>Under the pointer</span><input id="crossReal" type="color"></label>
+      <label class="set-row" for="crossCopy"><span>Copies in the other panels</span><input id="crossCopy" type="color"></label>
+      <label class="set-row" for="crossSize"><span>Size</span><span class="set-val"><input id="crossSize" type="range" min="6" max="40" step="1"><b id="crossSizeV"></b></span></label>
+      <label class="set-row" for="crossWidth"><span>Thickness</span><span class="set-val"><input id="crossWidth" type="range" min="1" max="5" step="0.5"><b id="crossWidthV"></b></span></label>
+      <label class="rowchk"><input id="crossCopies" type="checkbox"> Show copies in the other panels</label>
+      <button id="resetCross" type="button">Reset crosshair</button>
+      <h4>Panning</h4>
+      <label class="rowchk"><input id="edgePanOn" type="checkbox"> Edge pan</label>
+      <label class="set-row" for="edgePanSpeed"><span>Edge pan speed</span><span class="set-val"><input id="edgePanSpeed" type="range" min="3" max="30" step="1"><b id="edgePanSpeedV"></b></span></label>
+      <div id="dragScrollRow" class="key-list"></div>
+      <button id="resetPan" type="button">Reset panning</button>
+    </section>
+  </div>
+  <div class="pts-actions"><button id="settingsClose" type="button" class="primary">Done</button></div>
+</div></div>
+<div id="nd2PointsModal" class="pts-modal" role="dialog" aria-modal="true" aria-labelledby="nd2PointsTitle"><div class="pts-card"><h3 id="nd2PointsTitle">Points in <span id="nd2PointsFile"></span></h3>
+<div class="pts-info" id="nd2PointsInfo"></div>
+<div class="nd2-points-layout">
+<div class="nd2-points-mapwrap"><div class="nd2-points-tools"><button type="button" id="nd2PointsAll">Select all</button><button type="button" id="nd2PointsNone">Select none</button><button type="button" id="nd2PointsMirror" title="Mirror the map left to right, to match the slide">Mirror &#8596;</button><button type="button" id="nd2PointsFlip" title="Flip the map top to bottom, to match the slide">Flip &#8597;</button><label class="nd2-points-align" title="Cells or fibres seen twice? Each point is checked for z-planes shifted against its middle one, and lined up region by region if they are, before their maximum is taken. Pixels are moved, not changed. The same setting as in Soma's and Image Prep's Z windows."><input type="checkbox" id="nd2PointsAlign"> Line up doubled z-planes when opened</label><span class="nd2-points-hint">Click a point to see it large. Shift-click or drag around points to select them. Each picture is the point's middle z-plane.</span></div>
+<div class="nd2-points-stage"><svg id="nd2PointsMap" class="nd2-points-map" role="img" aria-label="Map of the points at their stage positions"></svg>
+<div id="nd2PointView" class="nd2-point-view" hidden><div class="npv-head"><button type="button" id="nd2PointViewBack" title="Back to the map (Esc)">&#8592; Map</button><button type="button" id="nd2PointViewPrev" title="Previous point (&#8592; key)">&#8249;</button><b id="nd2PointViewName"></b><button type="button" id="nd2PointViewNext" title="Next point (&#8594; key)">&#8250;</button><label><input type="checkbox" id="nd2PointViewSelected"> Selected</label></div>
+<div class="npv-body"><img id="nd2PointViewImg" alt=""></div><div class="npv-note" id="nd2PointViewNote"></div></div></div></div>
+<div class="nd2-points-side"><div class="nd2-points-side-head"><b>Groups</b><button type="button" id="nd2PointsNewGroup" title="Put the selected points in a new group">+ Group from selected</button></div>
+<div class="nd2-points-side-hint">One group per brain: its ID and genotype go into the names of the images opened, and so into exports. Groups are shared with Image Prep for this file.</div>
+<div id="nd2PointsGroups" class="nd2-points-groups"></div></div>
+</div>
+<div class="nd2-points-status" id="nd2PointsStatus"></div>
+<div class="pts-actions"><span id="nd2PointsCount" class="nd2-points-count"></span><button type="button" id="nd2PointsCancel">Close</button><button type="button" id="nd2PointsOpen" class="primary">Open selected in Soma</button></div>
+</div></div>
+<script src="assets/apps/soma.js"></script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Soma Quantification"
+abstract: >-
+  Browser-based counting of neuronal somata in fluorescence microscopy images (ND2, TIFF, PNG, JPEG),
+  with trained cell classifiers, hand correction, colocalisation of merged channels and per-region
+  counts.
+type: software
+authors:
+  - alias: rwu92
+version: 1.0.0
+date-released: 2026-11-02
+license: MIT
+repository-code: "https://github.com/rwu92/soma-quantification"
+url: "https://rwu92.github.io/soma-quantification/"
+keywords:
+  - cell counting
+  - soma
+  - fluorescence microscopy
+  - colocalisation
+  - substantia nigra
+  - ventral tegmental area
+  - tyrosine hydroxylase
